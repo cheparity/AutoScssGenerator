@@ -1,10 +1,8 @@
 export class ClassTreeNode {
-    father: ClassTreeNode | null;
-    children: ClassTreeNode[];
+    father: ClassTreeNode | null = null;
+    children: ClassTreeNode[] = [];
     className: string;
     constructor(className: string) {
-        this.father = null;
-        this.children = [];
         this.className = className;
     }
 

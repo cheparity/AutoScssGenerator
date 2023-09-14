@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { ClassTreeNode } from './classTree';
-import { baseParse, BaseElementNode, ElementNode, NodeTypes, AttributeNode, RootNode } from '@vue/compiler-core';
+import * as vueCompiler from '@vue/compiler-core';
+import * as postcss from 'postcss-scss';
+// import * as sass from 'sass';
 
 enum StyleLang {
     css = 'css',
@@ -26,29 +28,53 @@ export class ScssGenerator {
     }
     private parseTemplate2HtmlTree(text: string) {
         // get the whole text of the document
-        const res = baseParse(text);
-        const templateNode = res.children.find((node) => (node as unknown as BaseElementNode).tag === 'template') as unknown as BaseElementNode;
-        this.walkNodes(templateNode.children[0] as unknown as BaseElementNode);
+        const res = vueCompiler.baseParse(text);
+        const templateNode = res.children.find((node) => (node as unknown as vueCompiler.BaseElementNode).tag === 'template') as unknown as vueCompiler.BaseElementNode;
+        this.walkNodes(templateNode.children[0] as unknown as vueCompiler.BaseElementNode);
     }
 
     private parseStyle2ScssTree(text: string) {
-        const res = baseParse(text);
-        const styleNode = res.children.find((node) => (node as unknown as BaseElementNode).tag === 'style') as unknown as BaseElementNode;
+        const res = vueCompiler.baseParse(text);
+        const styleNode = res.children.find((node) => (node as unknown as vueCompiler.BaseElementNode).tag === 'style') as unknown as vueCompiler.BaseElementNode;
         console.log('styleNode is ', styleNode);
 
-        const langProp = styleNode.props.find((prop) => prop.name === 'lang') as unknown as AttributeNode;
+        const langProp = styleNode.props.find((prop) => prop.name === 'lang') as unknown as vueCompiler.AttributeNode;
         const lang = (langProp?.value?.content as unknown as string) || StyleLang.css;
         console.log('lang is ', lang);
 
-        //todo 分析语法树
+        //todo 分析语法树J
+        const scssCode = (styleNode.children[0] as unknown as vueCompiler.TextNode).content as unknown as string;
+        scssCode && console.log('styleStr is ', scssCode);
 
+        // const cssCode = sass.compileString(scssCode);
+        // console.log("cssCode is: ", cssCode.css);
+        // const node = postcss.parse(cssCode.css);
+        const root = postcss.parse(scssCode);
+        console.log("postcssRes is: ", root);
+        console.log("node[]: ", root.nodes);
+        console.log("nodes[0]: ", root.nodes[0]);
+        /**
+         * The node data: 
+         * root: {
+         *      nodes: [
+         *          node: {
+         *              selector: string,
+         *              selectors: UNKNOWN,
+         *              source.input.css: string (in fact is scss),
+         *              type: 'rule' | 'root'
+         *          }
+         *      ]
+         * }
+         */
     }
 
-    private walkNodes(node: BaseElementNode, father: ClassTreeNode | null = null) {
+
+
+    private walkNodes(node: vueCompiler.BaseElementNode, father: ClassTreeNode | null = null) {
         console.log('========' + node.tag + '==in==========');
         console.log('node is ', node);
         //get the class attribute, then get the class name
-        const classProp = node.props.find((prop) => prop.name === 'class') as unknown as AttributeNode;
+        const classProp = node.props.find((prop) => prop.name === 'class') as unknown as vueCompiler.AttributeNode;
         classProp && console.log('classProp is ', classProp);
         const className = classProp?.value?.content as unknown as string;
         const classTreeNode = new ClassTreeNode(className);
@@ -65,7 +91,7 @@ export class ScssGenerator {
         }
         //walk the children
         node.children.forEach((child) => {
-            if (child.type === NodeTypes.ELEMENT) {
+            if (child.type === vueCompiler.NodeTypes.ELEMENT) {
                 this.walkNodes(child, classTreeNode);
                 // this.walkNodes(child);
             }
