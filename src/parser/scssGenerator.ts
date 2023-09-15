@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/semi */
 import * as vscode from 'vscode'
-import { AbstractClassTreeNode } from './abstractClassTreeNode'
+import { ClassTreeNode } from './classTreeNode'
 import * as vueCompiler from '@vue/compiler-core'
 import * as postcss from 'postcss-scss'
 // import * as sass from 'sass' 
@@ -16,8 +16,8 @@ enum StyleLang {
 
 export class ScssGenerator {
     private document: vscode.TextDocument
-    private htmlTree: AbstractClassTreeNode | null = null
-    private scssTree: AbstractClassTreeNode | null = null
+    private htmlTree: ClassTreeNode | null = null
+    private scssTree: ClassTreeNode | null = null
     constructor(document: vscode.TextDocument) {
         this.document = document
         const selection = new vscode.Selection(
