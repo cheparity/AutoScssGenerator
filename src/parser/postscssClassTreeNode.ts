@@ -1,41 +1,37 @@
-import { OverviewRulerLane } from "vscode"
+import { freemem } from "os"
 import { ClassTreeNode } from "./classTreeNode"
-import * as postcss from 'postcss'
+import { Node, ChildNode, AnyNode, Rule } from 'postcss'
 
-export default class PostscssTreeNode<PostCssNode extends postcss.Node = postcss.ChildNode> implements ClassTreeNode {
-    father: ClassTreeNode | null = null
-    children: ClassTreeNode[] = []
-    className: string
-    constructor(node: PostCssNode) {
-        this.className = node?.source?.input.css || ""
+export default class PostscssTreeNode implements ClassTreeNode {
+    private _children: PostscssTreeNode[] = []
+    private _node: Rule
+
+    constructor(node: AnyNode) {
+        this._node = node as Rule
+        this.children
+        this.className
+    }
+    get className(): string {
+        return (this._node as Rule).selector
+    }
+    get children(): ClassTreeNode[] {
+        if (this._children.length === 0) {
+            //init children
+            if (this._node?.nodes === null || !Array.isArray(this._node.nodes) || this._node.nodes.length <= 0) {
+                return this._children
+            }
+            for (var child of this._node.nodes) {
+                this._children.push(new PostscssTreeNode(child as unknown as Rule))
+            }
+        }
+        return this._children
     }
 
-    addChild(child: ClassTreeNode): void {
-        throw new Error("Method not implemented.")
-    }
-    setFather(father: ClassTreeNode): void {
-        throw new Error("Method not implemented.")
-    }
-    getFather(): ClassTreeNode | null {
-        throw new Error("Method not implemented.")
-    }
-    getChildren(): ClassTreeNode[] {
-        throw new Error("Method not implemented.")
-    }
-    getClassName(): string {
-        throw new Error("Method not implemented.")
-    }
-    isRoot(): boolean {
-        throw new Error("Method not implemented.")
-    }
-    isLeaf(): boolean {
-        throw new Error("Method not implemented.")
-    }
-    isBranch(): boolean {
-        throw new Error("Method not implemented.")
-    }
-    walkTree(behavior?: (node: ClassTreeNode) => void): void {
-        throw new Error("Method not implemented.")
+    walkTree(behavior: (node: ClassTreeNode) => void): void {
+        behavior(this)
+        for (var child of this.children) {
+            child.walkTree(behavior)
+        }
     }
 
 }

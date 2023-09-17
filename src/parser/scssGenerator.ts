@@ -2,9 +2,10 @@
 import * as vscode from 'vscode'
 import { ClassTreeNode } from './classTreeNode'
 import * as vueCompiler from '@vue/compiler-core'
-import * as postcss from 'postcss-scss'
+import * as postscss from 'postcss-scss'
 // import * as sass from 'sass' 
 import PostscssTreeNode from './postscssClassTreeNode'
+import VueTreeNode from './vueTreeNode'
 
 enum StyleLang {
     css = 'css',
@@ -34,6 +35,7 @@ export class ScssGenerator {
         const templateNode = res.children.find((node) => (node as unknown as vueCompiler.BaseElementNode).tag === 'template') as unknown as vueCompiler.BaseElementNode
         // this.walkNodes(templateNode.children[0] as unknown as vueCompiler.BaseElementNode)
         //todo not walk nodes yet
+        this.htmlTree = new VueTreeNode(templateNode.children[0] as unknown as vueCompiler.BaseElementNode)
     }
 
     private parseStyle2ScssTree(text: string) {
@@ -47,13 +49,18 @@ export class ScssGenerator {
 
         //todo 分析语法树
         const scssCode = (styleNode.children[0] as unknown as vueCompiler.TextNode).content as unknown as string
-        scssCode && console.log('styleStr is ', scssCode)
 
-        const root = postcss.parse(scssCode)
+        const root = postscss.parse(scssCode)
         console.log("postcssRes is: ", root)
         console.log("node[]: ", root.nodes)
-        console.log("nodes[0]: ", root.nodes[0])
-        // new PostscssTreeNode(root.nodes[0])
+        for (var n of root.nodes) {
+            var t = new PostscssTreeNode(n)
+            console.log("======== node in: ======= ", t.className)
+            t.walkTree((node) => {
+                console.log('node.classname is: ', node.className)
+            })
+            console.log("======== node out: ======= ", t.className)
+        }
 
         /**
          * The node data: 
@@ -101,12 +108,18 @@ export class ScssGenerator {
     //     console.log('========' + node.tag + '==out==========')
     // }
 
-    public peekClassTree() {
-        console.log("=====peek class tree: Begin======")
-        console.log("html tree: ", this.htmlTree)
-        console.log("scss tree: ", this.scssTree)
-        console.log("=====peek class tree: End======")
+    // public peekClassTree() {
+    //     console.log("=====peek class tree: Begin======")
+    //     console.log("html tree: ", this.htmlTree)
+    //     console.log("html children: ", this.htmlTree?.children)
+    //     console.log("walk html tree: ")
+    //     this.htmlTree?.walkTree((node) => {
+    //         console.log("node is: ", node)
+    //     })
 
-    }
+    //     console.log("scss tree: ", this.scssTree)
+    //     console.log("=====peek class tree: End======")
+
+    // }
 }
 

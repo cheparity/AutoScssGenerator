@@ -1,42 +1,40 @@
 import { BaseElementNode, AttributeNode } from '@vue/compiler-core'
 import { ClassTreeNode } from './classTreeNode'
 
+/**
+ * Children: lazy load.
+ * Classname: lazy load.
+ */
 export default class VueTreeNode implements ClassTreeNode {
-    vueNode: BaseElementNode
-    father: ClassTreeNode | null = null
-    children: ClassTreeNode[] = []
-    className: string
+    private _node: BaseElementNode
+    private _children: VueTreeNode[] = []
+
     constructor(node: BaseElementNode) {
-        this.vueNode = node
-        const classProp = node.props.find((prop) => prop.name === 'class') as unknown as AttributeNode
-        this.className = classProp.name
+        this._node = node
     }
-    addChild(child: ClassTreeNode): void {
-        this.children.push(child)
-        child.setFather(this)
+
+    get children() {
+        if (this._children.length === 0) {
+            //then init children
+            if (this._node?.children === null || !Array.isArray(this._node.children) || this._node.children.length <= 0) {
+                return this._children
+            }
+            for (var child of this._node.children) {
+                this._children.push(new VueTreeNode(child as unknown as BaseElementNode))
+            }
+        }
+        return this._children
     }
-    setFather(father: ClassTreeNode): void {
-        this.father = father
+    get className() {
+        const classProp = this._node.props.find((prop) => prop.name === 'class') as unknown as AttributeNode
+        return classProp?.name || ''
     }
-    getFather(): ClassTreeNode | null {
-        throw new Error('Method not implemented.')
-    }
-    getChildren(): ClassTreeNode[] {
-        throw new Error('Method not implemented.')
-    }
-    getClassName(): string {
-        throw new Error('Method not implemented.')
-    }
-    isRoot(): boolean {
-        throw new Error('Method not implemented.')
-    }
-    isLeaf(): boolean {
-        throw new Error('Method not implemented.')
-    }
-    isBranch(): boolean {
-        throw new Error('Method not implemented.')
-    }
+
     walkTree(behavior: (node: ClassTreeNode) => void): void {
-        throw new Error('Method not implemented.')
+        behavior(this)
+        for (var child of this.children) {
+            child.walkTree(behavior)
+        }
     }
+
 }

@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const document = editor.document;
 			const generator = new ScssGenerator(document);
 
-			generator.peekClassTree();
+			// generator.peekClassTree();
 			// const scss = generateSCSS(document);
 			// editor.edit((editBuilder) => {
 			// 	editBuilder.replace(selection, scss);
