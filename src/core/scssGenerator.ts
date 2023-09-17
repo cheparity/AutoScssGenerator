@@ -6,6 +6,7 @@ import * as postscss from 'postcss-scss'
 // import * as sass from 'sass' 
 import PostscssTreeNode from './postscssClassTreeNode'
 import VueTreeNode from './vueTreeNode'
+import postcss = require('postcss')
 
 enum StyleLang {
     css = 'css',
@@ -27,7 +28,12 @@ export class ScssGenerator {
         )
         const text = this.document.getText(selection)
         this.parseTemplate2HtmlTree(text)
-        this.parseStyle2ScssTree(text)
+        const newRule = postcss.rule({ selector: this.htmlTree?.name })
+        const r = this.generateScssCode(newRule, this.htmlTree!)
+        console.log("generateScssCode res: ")
+        console.log(postscss.parse(r).source?.input.css)
+
+        // this.parseStyle2ScssTree(text)
     }
     private parseTemplate2HtmlTree(text: string) {
         // get the whole text of the document
@@ -50,18 +56,7 @@ export class ScssGenerator {
         //todo 分析语法树
         const scssCode = (styleNode.children[0] as unknown as vueCompiler.TextNode).content as unknown as string
 
-        const root = postscss.parse(scssCode)
-        console.log("postcssRes is: ", root)
-        console.log("node[]: ", root.nodes)
-        for (var n of root.nodes) {
-            var t = new PostscssTreeNode(n)
-            console.log("======== node in: ======= ", t.className)
-            t.walkTree((node) => {
-                console.log('node.classname is: ', node.className)
-            })
-            console.log("======== node out: ======= ", t.className)
-        }
-
+        const root: postcss.Root = postscss.parse(scssCode)
         /**
          * The node data: 
          * root: {
@@ -77,49 +72,13 @@ export class ScssGenerator {
          */
     }
 
-
-
-    // private walkNodes(node: AbstractClassTreeNode, father: AbstractClassTreeNode | null = null): AbstractClassTreeNode {
-    //     console.log('========' + node.className + '==in==========')
-    //     console.log('node is ', node)
-    //     //get the class attribute, then get the class name
-    //     const classProp = node.props.find((prop) => prop.name === 'class') as unknown as vueCompiler.AttributeNode
-    //     classProp && console.log('classProp is ', classProp)
-    //     const className = classProp?.value?.content as unknown as string
-    //     const classTreeNode = new AbstractClassTreeNode(className)
-    //     // set the root node
-    //     if (this.htmlTree === null) {
-    //         this.htmlTree = classTreeNode
-    //     }
-    //     if (father !== null) {
-    //         classTreeNode.setFather(father)
-    //         father.addChild(classTreeNode)
-    //     }
-    //     if (node.children === null || !Array.isArray(node.children) || node.children.length <= 0) {
-    //         return
-    //     }
-    //     //walk the children
-    //     node.children.forEach((child) => {
-    //         if (child.type === vueCompiler.NodeTypes.ELEMENT) {
-    //             this.walkNodes(child, classTreeNode)
-    //             // this.walkNodes(child)
-    //         }
-    //     })
-    //     console.log('========' + node.tag + '==out==========')
-    // }
-
-    // public peekClassTree() {
-    //     console.log("=====peek class tree: Begin======")
-    //     console.log("html tree: ", this.htmlTree)
-    //     console.log("html children: ", this.htmlTree?.children)
-    //     console.log("walk html tree: ")
-    //     this.htmlTree?.walkTree((node) => {
-    //         console.log("node is: ", node)
-    //     })
-
-    //     console.log("scss tree: ", this.scssTree)
-    //     console.log("=====peek class tree: End======")
-
-    // }
+    private generateScssCode(fatherRule: postcss.Rule, fatherNode: ClassTreeNode): postcss.Rule {
+        for (var child of fatherNode.children) {
+            const rule = postcss.rule({ selector: `.${child.name}` })
+            fatherRule.append(rule)
+            this.generateScssCode(rule, child)
+        }
+        return fatherRule
+    }
 }
 
