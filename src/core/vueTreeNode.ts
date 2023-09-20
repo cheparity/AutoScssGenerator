@@ -24,8 +24,16 @@ export default class VueTreeNode implements ClassTreeNode {
 
     get name() {
         //todo lack of #id's situation
-        const classProp = this.node_.props.find((prop) => prop.name === 'class') as unknown as AttributeNode
-        return classProp?.value?.content || ''
+        for (var prop of this.node_.props) {
+            prop = (prop as AttributeNode)
+            if (prop.name === 'class') {
+                return `.${prop.value?.content}`
+            } else if (prop.name === 'id') {
+                return `#${prop.value?.content}`
+            }
+        }
+        console.log("no name or id found!")
+        return ''
     }
 
     walkTree(behavior: (node: ClassTreeNode, childNode: ClassTreeNode) => void): void {

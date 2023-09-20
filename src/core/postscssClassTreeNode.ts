@@ -1,6 +1,7 @@
 import { freemem } from "os"
 import { ClassTreeNode } from "./classTreeNode"
 import { Node, ChildNode, AnyNode, Rule } from 'postcss'
+import { SourceLocation, BaseElementNode } from '@vue/compiler-core';
 
 export default class PostscssTreeNode implements ClassTreeNode {
     private children_: PostscssTreeNode[] = []
@@ -11,9 +12,15 @@ export default class PostscssTreeNode implements ClassTreeNode {
         this.children
         this.name
     }
+
     get name(): string {
         return (this.node_ as Rule).selector
     }
+
+    get loc(): SourceLocation {
+        return (this.node_ as any as BaseElementNode).loc
+    }
+
     get children(): ClassTreeNode[] {
         if (this.children_.length === 0) {
             //init children

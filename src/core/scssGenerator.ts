@@ -7,6 +7,7 @@ import * as postscss from 'postcss-scss'
 import PostscssTreeNode from './postscssClassTreeNode'
 import VueTreeNode from './vueTreeNode'
 import postcss = require('postcss')
+import { symbolTypeAnnotation } from '@babel/types'
 
 enum StyleLang {
     css = 'css',
@@ -17,48 +18,42 @@ enum StyleLang {
 }
 
 export class ScssGenerator {
+    private editor: vscode.TextEditor
     private document: vscode.TextDocument
-    private htmlTree: ClassTreeNode | null = null
-    private scssTree: ClassTreeNode | null = null
-    constructor(document: vscode.TextDocument) {
-        this.document = document
+    private templateNode: ClassTreeNode | null = null
+    private styleLoc: vueCompiler.SourceLocation | null = null
+    constructor(editor: vscode.TextEditor) {
+        this.editor = editor
+        this.document = editor.document
         const selection = new vscode.Selection(
             new vscode.Position(0, 0),
             new vscode.Position(this.document.lineCount - 1, this.document.lineAt(this.document.lineCount - 1).text.length)
         )
         const text = this.document.getText(selection)
-        this.parseTemplate2HtmlTree(text)
-        const newRule = postcss.rule({ selector: this.htmlTree?.name })
-        const r = this.generateScssCode(newRule, this.htmlTree!)
-        console.log("generateScssCode res: ")
-        console.log(postscss.parse(r).source?.input.css)
-
-        // this.parseStyle2ScssTree(text)
+        this.parseTrees(text)
+        const newRule = postcss.rule({ selector: this.templateNode?.name })
+        const html2styleCode = this.parseHtmlRule(newRule, this.templateNode!)
+        this.generate(postscss.parse(html2styleCode).source?.input.css as string)
     }
-    private parseTemplate2HtmlTree(text: string) {
+
+    private parseTrees(text: string) {
         // get the whole text of the document
         const res = vueCompiler.baseParse(text)
         const templateNode = res.children.find((node) => (node as unknown as vueCompiler.BaseElementNode).tag === 'template') as unknown as vueCompiler.BaseElementNode
-        // this.walkNodes(templateNode.children[0] as unknown as vueCompiler.BaseElementNode)
-        //todo not walk nodes yet
-        this.htmlTree = new VueTreeNode(templateNode.children[0] as unknown as vueCompiler.BaseElementNode)
-    }
-
-    private parseStyle2ScssTree(text: string) {
-        const res = vueCompiler.baseParse(text)
         const styleNode = res.children.find((node) => (node as unknown as vueCompiler.BaseElementNode).tag === 'style') as unknown as vueCompiler.BaseElementNode
-        console.log('styleNode is ', styleNode)
-
+        //todo not walk nodes yet
+        this.templateNode = new VueTreeNode(templateNode.children[0] as unknown as vueCompiler.BaseElementNode)
+        this.styleLoc = styleNode.loc
         const langProp = styleNode.props.find((prop) => prop.name === 'lang') as unknown as vueCompiler.AttributeNode
-        const lang = (langProp?.value?.content as unknown as string) || StyleLang.css
-        console.log('lang is ', lang)
-
+        if (langProp?.value?.content !== undefined) {
+            const lang = (langProp?.value?.content as unknown as string) || StyleLang.css
+            const scssCode = (styleNode.children[0] as unknown as vueCompiler.TextNode).content as unknown as string
+            const root: postcss.Root = postscss.parse(scssCode)
+        }
         //todo 分析语法树
-        const scssCode = (styleNode.children[0] as unknown as vueCompiler.TextNode).content as unknown as string
 
-        const root: postcss.Root = postscss.parse(scssCode)
         /**
-         * The node data: 
+         * The style node data: 
          * root: {
          *      nodes: [
          *          node: {
@@ -72,13 +67,27 @@ export class ScssGenerator {
          */
     }
 
-    private generateScssCode(fatherRule: postcss.Rule, fatherNode: ClassTreeNode): postcss.Rule {
+    private parseHtmlRule(fatherRule: postcss.Rule, fatherNode: ClassTreeNode): postcss.Rule {
         for (var child of fatherNode.children) {
-            const rule = postcss.rule({ selector: `.${child.name}` })
+            const rule = postcss.rule({ selector: child.name })
             fatherRule.append(rule)
-            this.generateScssCode(rule, child)
+            this.parseHtmlRule(rule, child)
         }
         return fatherRule
+    }
+
+    /**
+     * Find locations based on [styleLoc] and insert it into proper location.
+     * @param code 
+     */
+    public generate(code: string) {
+        //insert
+        if (this.editor) {
+            this.editor.edit((editBuilder) => {
+                const position = new vscode.Position(this.styleLoc?.start.line as number, 0);
+                editBuilder.insert(position, `\n${code}\n`)
+            })
+        }
     }
 }
 
