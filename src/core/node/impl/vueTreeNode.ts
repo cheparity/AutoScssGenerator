@@ -1,5 +1,5 @@
 import { BaseElementNode, AttributeNode } from '@vue/compiler-core'
-import { ClassTreeNode } from './classTreeNode'
+import { ClassTreeNode } from '../classTreeNode'
 
 export default class VueTreeNode implements ClassTreeNode {
     private node_: BaseElementNode

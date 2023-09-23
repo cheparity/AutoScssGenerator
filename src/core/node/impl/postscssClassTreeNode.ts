@@ -1,5 +1,5 @@
 import { freemem } from "os"
-import { ClassTreeNode } from "./classTreeNode"
+import { ClassTreeNode } from "../classTreeNode"
 import { Node, ChildNode, AnyNode, Rule } from 'postcss'
 import { SourceLocation, BaseElementNode } from '@vue/compiler-core';
 
