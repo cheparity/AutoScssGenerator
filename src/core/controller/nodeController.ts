@@ -1,12 +1,10 @@
-import { VueParser as VueService } from "../service/vueService";
+import { VueService as VueService } from "../service/vueService";
 import * as vscode from 'vscode'
 import ScssService from "../service/scssService";
-import { Position } from "../node/classTreeNode";
-import { constants } from "buffer";
-export default class CommandHandler {
+export default class NodeController {
     private editor: vscode.TextEditor
-    private vue: VueService
-    private scss: ScssService
+    private vueService: VueService
+    private scssService: ScssService
     constructor(editor: vscode.TextEditor) {
         this.editor = editor
         const document = editor.document
@@ -15,9 +13,9 @@ export default class CommandHandler {
             new vscode.Position(document.lineCount - 1, document.lineAt(document.lineCount - 1).text.length)
         )
         const text = document.getText(selection)
-        this.vue = new VueService(text) //whole text
-        const styleCode = this.vue.styleCode
-        this.scss = new ScssService(styleCode) //just scss text
+        this.vueService = new VueService(text) //whole text
+        const styleCode = this.vueService.styleCode
+        this.scssService = new ScssService(styleCode) //just scss text
     }
 
     /**
@@ -25,12 +23,11 @@ export default class CommandHandler {
      */
     public generate() {
         //todo not implement
-        const code = this.scss.node2RuleCode(this.vue.templateNode!)
-        const styleLoc = this.vue.styleLoc
+        const code = this.scssService.node2RuleCode(this.vueService.templateNode!)
+        const styleLoc = this.vueService.styleLoc
         if (this.editor) {
             this.editor.edit((editBuilder) => {
-                const position = new vscode.Position(styleLoc.line as number, styleLoc.column as number - 1);
-                console.log(position)
+                const position = new vscode.Position(styleLoc.line as number - 1, styleLoc.column as number - 1);
                 editBuilder.insert(position, `\n${code}\n`)
             })
         }

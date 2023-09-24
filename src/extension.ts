@@ -1,8 +1,9 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode'
-import { VueParser } from './core/service/vueService'
-import CommandHandler from './core/commandHandler/commandHandler'
+import { VueService } from './core/service/vueService'
+import CommandHandler from './core/controller/nodeController'
+import NodeController from './core/controller/nodeController'
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -32,8 +33,9 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showInformationMessage('Please open a vue file.')
                 return
             }
-            const cmdHandler = new CommandHandler(editor)
-            cmdHandler.generate()
+            const nodeController = new NodeController(editor)
+            nodeController.generate()
+            nodeController.diff()
         }
     )
     context.subscriptions.push(scssDisposable)

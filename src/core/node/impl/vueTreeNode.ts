@@ -9,6 +9,10 @@ export default class VueTreeNode implements ClassTreeNode {
         this.node_ = node
     }
 
+    get node(): BaseElementNode {
+        return this.node_
+    }
+
     get children() {
         if (this.children_.length === 0) {
             //then init children

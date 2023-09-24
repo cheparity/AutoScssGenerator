@@ -6,6 +6,8 @@ export interface ClassTreeNode {
 
     get children(): ClassTreeNode[]
 
+    get node(): any
+
     walkTree(behavior: (node: ClassTreeNode, child: ClassTreeNode) => void): void;
 }
 

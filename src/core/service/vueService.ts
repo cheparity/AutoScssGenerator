@@ -3,7 +3,7 @@ import * as vueCompiler from '@vue/compiler-core'
 import VueTreeNode from '../node/impl/vueTreeNode'
 
 
-export class VueParser {
+export class VueService {
     private text: string
     lang: string | null = null
 
@@ -12,11 +12,16 @@ export class VueParser {
     }
 
     get templateNode(): ClassTreeNode {
-        return this.txt2Ast(this.text)
+        const res = vueCompiler.baseParse(this.text)
+        const templateNode = res.children.find((node) => (node as vueCompiler.BaseElementNode).tag === 'template') as unknown as vueCompiler.BaseElementNode
+        //todo not walk nodes yet
+        return new VueTreeNode(templateNode.children[0] as vueCompiler.BaseElementNode)
     }
 
     get styleNode(): vueCompiler.BaseElementNode | null {
-        return vueCompiler.baseParse(this.text).children.find((node) => (node as unknown as vueCompiler.BaseElementNode).tag === 'style') as unknown as vueCompiler.BaseElementNode
+        const node = vueCompiler.baseParse(this.text).children.find((node) => (node as unknown as vueCompiler.BaseElementNode).tag === 'style') as unknown as vueCompiler.BaseElementNode
+        // return new PostscssTreeNode(node)
+        return node
     }
 
     get styleCode(): string {
@@ -25,7 +30,6 @@ export class VueParser {
             if (langProp?.value?.content) {
                 this.lang = (langProp?.value?.content as string)
             }
-            console.log(this.styleNode)
             if (this.styleNode.children.length === 0) {
                 return ''
             }
@@ -37,7 +41,7 @@ export class VueParser {
 
     get styleLoc(): Position {
         if (this.styleNode) {
-            const line = this.styleNode.loc.end.line - 1
+            const line = this.styleNode.loc.end.line
             const column = this.styleNode.loc.end.column - 8
             return {
                 line: line,
@@ -48,19 +52,6 @@ export class VueParser {
             line: -1,
             column: -1
         }
-    }
-
-    /**
-     * Parse the text into `ClassTreeNode`.
-     * @param text The text to be parsed.
-     * @returns The ClassTreeNode result.
-     */
-    txt2Ast(text: string): ClassTreeNode {
-        // get the whole text of the document
-        const res = vueCompiler.baseParse(text)
-        const templateNode = res.children.find((node) => (node as vueCompiler.BaseElementNode).tag === 'template') as unknown as vueCompiler.BaseElementNode
-        //todo not walk nodes yet
-        return new VueTreeNode(templateNode.children[0] as vueCompiler.BaseElementNode)
     }
 
 }

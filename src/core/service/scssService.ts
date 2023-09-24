@@ -1,12 +1,24 @@
-import * as vscode from 'vscode'
 import * as postcss from 'postcss';
 import { ClassTreeNode } from '../node/classTreeNode'
 import * as postscss from 'postcss-scss';
+import CssTreeNode from '../node/impl/cssTreeNode';
 
-export default class ScssParser {
+export default class ScssService {
     source: string
+    private root: postcss.Root
+    private cssForest_: ClassTreeNode[] = []
+
     constructor(text: string) {
         this.source = text
+        this.root = postscss.parse(this.source)
+    }
+
+    get cssForest(): ClassTreeNode[] {
+        this.cssForest_ = []
+        for (var child of this.root.nodes) {
+            this.cssForest_.push(new CssTreeNode(child))
+        }
+        return this.cssForest_
     }
 
     /**
@@ -28,4 +40,5 @@ export default class ScssParser {
         }
         return fatherRule
     }
+
 }
